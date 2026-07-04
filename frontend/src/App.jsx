@@ -4,6 +4,9 @@ const TRANSLATIONS = {
   vi: {
     dashboard: "Dashboard",
     clean: "Dọn dẹp",
+    uninstaller: "Gỡ ứng dụng",
+    startup: "Khởi động",
+    diskMap: "Phân tích đĩa",
     about: "Giới thiệu",
     systemOverview: "Tổng quan Hệ thống",
     performanceSubtitle: "Giám sát và kiểm tra hiệu năng thời gian thực",
@@ -46,11 +49,54 @@ const TRANSLATIONS = {
     free: "Còn trống",
     language: "Ngôn ngữ",
     selectItems: "Vui lòng chọn ít nhất một mục để dọn dẹp.",
-    connectionError: "Không thể kết nối tới Backend API. Vui lòng đảm bảo server đang chạy."
+    connectionError: "Không thể kết nối tới Backend API. Vui lòng đảm bảo server đang chạy.",
+    
+    // Uninstaller
+    uninstallerTitle: "Gỡ ứng dụng tận gốc",
+    uninstallerSubtitle: "Quét và gỡ bỏ hoàn toàn file rác mồ côi (leftovers) của ứng dụng",
+    scanLeftovers: "Đang quét file leftovers cho ứng dụng {name}...",
+    leftoversTitle: "Danh sách file leftovers phát hiện cho {name}",
+    uninstallBtn: "Gỡ bỏ app & leftovers",
+    noApps: "Không tìm thấy ứng dụng nào cài đặt.",
+    searchApp: "Tìm kiếm ứng dụng...",
+    uninstalling: "Đang tiến hành gỡ cài đặt ứng dụng. Vui lòng đợi...",
+    uninstallSuccess: "Gỡ cài đặt hoàn tất thành công!",
+    uninstallSuccessDesc: "Đã xóa thành công {count} tệp tin và giải phóng hoàn toàn ứng dụng.",
+    
+    // Startup
+    startupTitle: "Quản lý Ứng dụng Khởi động",
+    startupSubtitle: "Quản lý Launch Agents để máy Mac khởi động nhanh hơn",
+    startupName: "Tên dịch vụ khởi động",
+    status: "Trạng thái",
+    enabled: "Kích hoạt",
+    disabled: "Vô hiệu hóa",
+    loadingStartup: "Đang tải các tác vụ khởi động...",
+    noStartup: "Không phát hiện Launch Agents/Daemons nào.",
+    
+    // Disk Map
+    diskMapTitle: "Phân tích Ổ đĩa",
+    diskMapSubtitle: "Quét dung lượng các thư mục con và tìm các file cực lớn",
+    currentPath: "Thư mục hiện tại:",
+    upFolder: "Thư mục cha",
+    scanningDisk: "Đang quét phân tích dung lượng ổ đĩa. Vui lòng đợi...",
+    itemName: "Tên tệp/thư mục",
+    size: "Dung lượng",
+    action: "Hành động",
+    delete: "Xóa",
+    confirmDelete: "Bạn có chắc chắn muốn xóa vĩnh viễn: {name}?",
+    
+    // Hardware HUD
+    cpuTemp: "Nhiệt độ CPU",
+    battery: "Sức khỏe Pin",
+    cycleCount: "Số chu kỳ sạc:",
+    health: "Sức khỏe Pin:"
   },
   en: {
     dashboard: "Dashboard",
     clean: "Clean",
+    uninstaller: "Uninstaller",
+    startup: "Startup Manager",
+    diskMap: "Disk Map",
     about: "About",
     systemOverview: "System Overview",
     performanceSubtitle: "Real-time performance monitoring and checking",
@@ -93,23 +139,83 @@ const TRANSLATIONS = {
     free: "Free",
     language: "Language",
     selectItems: "Please select at least one item to clean.",
-    connectionError: "Could not connect to Backend API. Please make sure the server is running."
+    connectionError: "Could not connect to Backend API. Please make sure the server is running.",
+    
+    // Uninstaller
+    uninstallerTitle: "App Uninstaller",
+    uninstallerSubtitle: "Scan and completely remove application leftovers and cache assets",
+    scanLeftovers: "Scanning leftovers for application {name}...",
+    leftoversTitle: "Detected leftover assets for {name}",
+    uninstallBtn: "Remove App & Leftovers",
+    noApps: "No installed applications found.",
+    searchApp: "Search applications...",
+    uninstalling: "Uninstalling app assets. Please wait...",
+    uninstallSuccess: "Uninstallation completed successfully!",
+    uninstallSuccessDesc: "Successfully deleted {count} files and completely uninstalled the application.",
+    
+    // Startup
+    startupTitle: "Startup Manager",
+    startupSubtitle: "Manage Launch Agents to make macOS boot faster",
+    startupName: "Startup Service Name",
+    status: "Status",
+    enabled: "Enabled",
+    disabled: "Disabled",
+    loadingStartup: "Loading startup tasks...",
+    noStartup: "No Launch Agents/Daemons detected.",
+    
+    // Disk Map
+    diskMapTitle: "Disk Analyzer Map",
+    diskMapSubtitle: "Scan subdirectory sizes and identify large files",
+    currentPath: "Current Directory:",
+    upFolder: "Up Folder",
+    scanningDisk: "Scanning disk directories. Please wait...",
+    itemName: "File/Folder Name",
+    size: "Size",
+    action: "Action",
+    delete: "Delete",
+    confirmDelete: "Are you sure you want to permanently delete: {name}?",
+    
+    // Hardware HUD
+    cpuTemp: "CPU Temperature",
+    battery: "Battery Health",
+    cycleCount: "Charge Cycles:",
+    health: "Battery Condition:"
   }
 };
 
 function App() {
-  const [lang, setLang] = useState(() => {
-    return localStorage.getItem('sachmac_lang') || 'vi';
-  });
+  const [lang, setLang] = useState(() => localStorage.getItem('sachmac_lang') || 'vi');
   const [activeTab, setActiveTab] = useState('dashboard');
+  
+  // States: Dọn dẹp
   const [cleanLevel, setCleanLevel] = useState('safe');
-  const [systemStatus, setSystemStatus] = useState(null);
-  const [scanStatus, setScanStatus] = useState('idle'); // idle | scanning | scanned | cleaning | cleaned
+  const [scanStatus, setScanStatus] = useState('idle'); 
   const [scanResults, setScanResults] = useState([]);
   const [selectedItems, setSelectedItems] = useState({});
   const [cleanSummary, setCleanSummary] = useState(null);
 
-  // Helper dịch thuật
+  // States: Hệ thống
+  const [systemStatus, setSystemStatus] = useState(null);
+  const [hardwareDetail, setHardwareDetail] = useState(null);
+
+  // States: Uninstaller
+  const [appsList, setAppsList] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedApp, setSelectedApp] = useState(null);
+  const [uninstallerStatus, setUninstallerStatus] = useState('idle'); // idle | scanning | scanned | cleaning | cleaned
+  const [leftovers, setLeftovers] = useState([]);
+  const [selectedLeftovers, setSelectedLeftovers] = useState({});
+  const [uninstallSummary, setUninstallSummary] = useState(null);
+
+  // States: Startup Manager
+  const [startupItems, setStartupItems] = useState([]);
+  const [startupLoading, setStartupLoading] = useState(false);
+
+  // States: Disk Map
+  const [diskMapData, setDiskMapData] = useState(null);
+  const [diskMapPath, setDiskMapPath] = useState('~/');
+  const [diskMapLoading, setDiskMapLoading] = useState(false);
+
   const t = (key, replaceObj = {}) => {
     let text = TRANSLATIONS[lang][key] || TRANSLATIONS['vi'][key] || key;
     Object.keys(replaceObj).forEach(k => {
@@ -118,13 +224,12 @@ function App() {
     return text;
   };
 
-  // Lưu ngôn ngữ khi thay đổi
   const changeLanguage = (newLang) => {
     setLang(newLang);
     localStorage.setItem('sachmac_lang', newLang);
   };
 
-  // Fetch trạng thái hệ thống định kỳ (5 giây một lần)
+  // Fetch trạng thái hệ thống và phần cứng định kỳ
   useEffect(() => {
     const fetchStatus = async () => {
       try {
@@ -132,53 +237,108 @@ function App() {
         const data = await res.json();
         setSystemStatus(data);
       } catch (err) {
-        console.error('Lỗi khi lấy trạng thái hệ thống:', err);
+        console.error(err);
+      }
+    };
+
+    const fetchHardware = async () => {
+      try {
+        const res = await fetch('http://127.0.0.1:4000/api/system-detail');
+        const data = await res.json();
+        setHardwareDetail(data);
+      } catch (err) {
+        console.error(err);
       }
     };
 
     fetchStatus();
-    const interval = setInterval(fetchStatus, 5000);
+    fetchHardware();
+    const interval = setInterval(() => {
+      fetchStatus();
+      fetchHardware();
+    }, 5000);
     return () => clearInterval(interval);
   }, []);
 
-  // Thực hiện quét (Scan) hệ thống
+  // API Uninstaller: Lấy danh sách app
+  const fetchApps = async () => {
+    try {
+      const res = await fetch('http://127.0.0.1:4000/api/apps/list');
+      const data = await res.json();
+      setAppsList(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // API Startup: Lấy danh sách Launch Agents
+  const fetchStartupItems = async () => {
+    setStartupLoading(true);
+    try {
+      const res = await fetch('http://127.0.0.1:4000/api/startup/list');
+      const data = await res.json();
+      setStartupItems(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setStartupLoading(false);
+    }
+  };
+
+  // API Disk Map: Quét phân tích ổ đĩa
+  const fetchDiskMap = async (dirPath) => {
+    setDiskMapLoading(true);
+    try {
+      const res = await fetch(`http://127.0.0.1:4000/api/disk-map?path=${encodeURIComponent(dirPath)}`);
+      const data = await res.json();
+      setDiskMapData(data);
+      setDiskMapPath(data.currentPath);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDiskMapLoading(false);
+    }
+  };
+
+  // Trigger khi đổi Tab
+  useEffect(() => {
+    if (activeTab === 'uninstaller') {
+      fetchApps();
+      setUninstallerStatus('idle');
+    } else if (activeTab === 'startup') {
+      fetchStartupItems();
+    } else if (activeTab === 'diskMap') {
+      fetchDiskMap(diskMapPath);
+    }
+  }, [activeTab]);
+
+  // Quét Clean
   const handleScan = async () => {
     setScanStatus('scanning');
-    setScanResults([]);
-    setSelectedItems({});
-    setCleanSummary(null);
-
     try {
       const res = await fetch('http://127.0.0.1:4000/api/scan');
       const data = await res.json();
       setScanResults(data);
       setScanStatus('scanned');
-
-      // Tự động chọn tất cả các mục quét được
       const initialSelection = {};
       data.forEach(cat => {
-        cat.items.forEach(item => {
-          initialSelection[item.title] = true;
-        });
+        cat.items.forEach(item => { initialSelection[item.title] = true; });
       });
       setSelectedItems(initialSelection);
     } catch (err) {
-      console.error('Lỗi quét hệ thống:', err);
       setScanStatus('idle');
       alert(t('connectionError'));
     }
   };
 
-  // Thực hiện dọn dẹp (Clean) các mục được chọn
+  // Xóa Clean
   const handleClean = async () => {
     const itemsToClean = Object.keys(selectedItems).filter(key => selectedItems[key]);
     if (itemsToClean.length === 0) {
       alert(t('selectItems'));
       return;
     }
-
     setScanStatus('cleaning');
-
     try {
       const res = await fetch('http://127.0.0.1:4000/api/clean', {
         method: 'POST',
@@ -186,54 +346,100 @@ function App() {
         body: JSON.stringify({ selectedItems: itemsToClean })
       });
       const data = await res.json();
-      
       setCleanSummary(data);
       setScanStatus('cleaned');
-      
-      // Refresh lại thông số hệ thống
-      const statusRes = await fetch('http://127.0.0.1:4000/api/system-status');
-      const statusData = await statusRes.json();
-      setSystemStatus(statusData);
     } catch (err) {
-      console.error('Lỗi dọn dẹp:', err);
       setScanStatus('scanned');
-      alert('Error during cleaning process.');
     }
   };
 
-  // Toggle chọn một item
-  const handleToggleItem = (title) => {
-    setSelectedItems(prev => ({
-      ...prev,
-      [title]: !prev[title]
-    }));
-  };
-
-  // Lọc kết quả quét theo cấp độ dọn dẹp đã chọn
-  const getFilteredResults = () => {
-    if (cleanLevel === 'safe') {
-      return scanResults.filter(cat => cat.level === 'safe');
-    }
-    if (cleanLevel === 'advanced') {
-      return scanResults.filter(cat => cat.level === 'safe' || cat.level === 'advanced');
-    }
-    return scanResults; // deep - lấy tất cả
-  };
-
-  // Tính tổng dung lượng file rác quét được
-  const getTotalTrashSize = () => {
-    let totalMB = 0;
-    getFilteredResults().forEach(cat => {
-      cat.items.forEach(item => {
-        const sizeStr = item.size.toLowerCase();
-        let val = parseFloat(sizeStr);
-        if (sizeStr.includes('gb')) val *= 1024;
-        else if (sizeStr.includes('kb')) val /= 1024;
-        else if (sizeStr.includes('b') && !sizeStr.includes('kb') && !sizeStr.includes('mb') && !sizeStr.includes('gb')) val /= (1024 * 1024);
-        totalMB += val;
+  // Quét Uninstaller Leftovers
+  const handleScanAppLeftovers = async (app) => {
+    setSelectedApp(app);
+    setUninstallerStatus('scanning');
+    try {
+      const res = await fetch('http://127.0.0.1:4000/api/apps/uninstall-scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ appName: app.name, appPath: app.path })
       });
-    });
-    return totalMB > 1024 ? `${(totalMB / 1024).toFixed(2)} GB` : `${totalMB.toFixed(1)} MB`;
+      const data = await res.json();
+      setLeftovers(data);
+      setUninstallerStatus('scanned');
+      const initialSelection = {};
+      data.forEach(item => { initialSelection[item.path] = true; });
+      setSelectedLeftovers(initialSelection);
+    } catch (err) {
+      setUninstallerStatus('idle');
+    }
+  };
+
+  // Thực thi Uninstaller
+  const handleUninstallRun = async () => {
+    const pathsToDelete = Object.keys(selectedLeftovers).filter(k => selectedLeftovers[k]);
+    if (pathsToDelete.length === 0) return;
+    setUninstallerStatus('cleaning');
+    try {
+      const res = await fetch('http://127.0.0.1:4000/api/apps/uninstall-run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paths: pathsToDelete })
+      });
+      const data = await res.json();
+      setUninstallSummary(data);
+      setUninstallerStatus('cleaned');
+      fetchApps();
+    } catch (err) {
+      setUninstallerStatus('scanned');
+    }
+  };
+
+  // Toggle Startup Items
+  const handleToggleStartup = async (item) => {
+    try {
+      const res = await fetch('http://127.0.0.1:4000/api/startup/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: item.name, currentPath: item.path, enabled: item.enabled })
+      });
+      if (res.ok) {
+        fetchStartupItems();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Xóa tệp tin lớn trong Disk Map
+  const handleDeleteLargeFile = async (itemPath, itemName) => {
+    if (confirm(t('confirmDelete', { name: itemName }))) {
+      try {
+        const res = await fetch('http://127.0.0.1:4000/api/clean', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ selectedItems: [itemName] }) 
+        });
+        // Thực thi xóa file đơn giản bằng cách gửi path đến endpoint xóa leftovers
+        await fetch('http://127.0.0.1:4000/api/apps/uninstall-run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paths: [itemPath] })
+        });
+        fetchDiskMap(diskMapPath);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  // Điều hướng lên thư mục cha
+  const handleGoUp = () => {
+    const parts = diskMapPath.split('/');
+    if (parts.length > 2) {
+      parts.pop();
+      const parent = parts.join('/');
+      fetchDiskMap(parent);
+    }
   };
 
   return (
@@ -247,83 +453,46 @@ function App() {
           </div>
 
           <ul className="nav-menu">
-            <li 
-              className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-              onClick={() => setActiveTab('dashboard')}
-            >
+            <li className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
               <span className="nav-icon">📊</span> {t('dashboard')}
             </li>
-            <li 
-              className={`nav-item ${activeTab === 'clean' ? 'active' : ''}`}
-              onClick={() => setActiveTab('clean')}
-            >
+            <li className={`nav-item ${activeTab === 'clean' ? 'active' : ''}`} onClick={() => setActiveTab('clean')}>
               <span className="nav-icon">🧹</span> {t('clean')}
             </li>
-            <li 
-              className={`nav-item ${activeTab === 'about' ? 'active' : ''}`}
-              onClick={() => setActiveTab('about')}
-            >
+            <li className={`nav-item ${activeTab === 'uninstaller' ? 'active' : ''}`} onClick={() => setActiveTab('uninstaller')}>
+              <span className="nav-icon">📦</span> {t('uninstaller')}
+            </li>
+            <li className={`nav-item ${activeTab === 'startup' ? 'active' : ''}`} onClick={() => setActiveTab('startup')}>
+              <span className="nav-icon">⚡</span> {t('startup')}
+            </li>
+            <li className={`nav-item ${activeTab === 'diskMap' ? 'active' : ''}`} onClick={() => setActiveTab('diskMap')}>
+              <span className="nav-icon">💾</span> {t('diskMap')}
+            </li>
+            <li className={`nav-item ${activeTab === 'about' ? 'active' : ''}`} onClick={() => setActiveTab('about')}>
               <span className="nav-icon">ℹ️</span> {t('about')}
             </li>
           </ul>
         </div>
 
-        {/* Nút chuyển đổi ngôn ngữ và HUD hệ thống */}
+        {/* Ngôn ngữ và HUD hệ thống */}
         <div>
           <div style={{ display: 'flex', gap: '8px', padding: '10px 14px', marginBottom: '14px', alignItems: 'center' }}>
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>🌐</span>
-            <button 
-              onClick={() => changeLanguage('vi')}
-              style={{
-                background: lang === 'vi' ? 'rgba(0, 122, 255, 0.2)' : 'transparent',
-                border: 'none',
-                color: lang === 'vi' ? '#fff' : 'var(--text-secondary)',
-                fontWeight: lang === 'vi' ? 'bold' : 'normal',
-                padding: '2px 8px',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px'
-              }}
-            >
-              VI
-            </button>
-            <button 
-              onClick={() => changeLanguage('en')}
-              style={{
-                background: lang === 'en' ? 'rgba(0, 122, 255, 0.2)' : 'transparent',
-                border: 'none',
-                color: lang === 'en' ? '#fff' : 'var(--text-secondary)',
-                fontWeight: lang === 'en' ? 'bold' : 'normal',
-                padding: '2px 8px',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px'
-              }}
-            >
-              EN
-            </button>
+            <button onClick={() => changeLanguage('vi')} style={{ background: lang === 'vi' ? 'rgba(0, 122, 255, 0.2)' : 'transparent', border: 'none', color: lang === 'vi' ? '#fff' : 'var(--text-secondary)', fontWeight: lang === 'vi' ? 'bold' : 'normal', padding: '2px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>VI</button>
+            <button onClick={() => changeLanguage('en')} style={{ background: lang === 'en' ? 'rgba(0, 122, 255, 0.2)' : 'transparent', border: 'none', color: lang === 'en' ? '#fff' : 'var(--text-secondary)', fontWeight: lang === 'en' ? 'bold' : 'normal', padding: '2px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>EN</button>
           </div>
 
           {systemStatus && (
             <div className="system-status-sidebar">
-              <div className="status-row">
-                <span className="status-label">CPU</span>
-                <span className="status-value">{systemStatus.cpu.load}%</span>
-              </div>
-              <div className="status-row">
-                <span className="status-label">RAM</span>
-                <span className="status-value">{systemStatus.ram.percentage}%</span>
-              </div>
-              <div className="status-row">
-                <span className="status-label">Disk</span>
-                <span className="status-value">{systemStatus.disk.percentage}%</span>
-              </div>
+              <div className="status-row"><span className="status-label">CPU</span><span className="status-value">{systemStatus.cpu.load}%</span></div>
+              <div className="status-row"><span className="status-label">RAM</span><span className="status-value">{systemStatus.ram.percentage}%</span></div>
+              <div className="status-row"><span className="status-label">Disk</span><span className="status-value">{systemStatus.disk.percentage}%</span></div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content Area */}
       <div className="main-content">
         
         {/* TAB 1: DASHBOARD */}
@@ -338,39 +507,26 @@ function App() {
 
             {systemStatus ? (
               <div className="dashboard-grid">
-                {/* Card CPU */}
                 <div className="card">
-                  <div className="card-header">
-                    <span className="card-title">{t('cpu')}</span>
-                    <span className="card-icon">⚙️</span>
-                  </div>
+                  <div className="card-header"><span className="card-title">{t('cpu')}</span><span className="card-icon">⚙️</span></div>
                   <div className="card-body">
                     <h2>{systemStatus.cpu.load}% <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>{t('running')}</span></h2>
                     <div className="progress-bar-container">
-                      <div 
-                        className={`progress-bar ${systemStatus.cpu.load > 80 ? 'yellow' : 'blue'}`}
-                        style={{ width: `${systemStatus.cpu.load}%` }}
-                      ></div>
+                      <div className={`progress-bar ${systemStatus.cpu.load > 80 ? 'yellow' : 'blue'}`} style={{ width: `${systemStatus.cpu.load}%` }}></div>
                     </div>
-                    <span className="card-detail" style={{ marginTop: '10px' }}>
+                    <div className="card-detail" style={{ marginTop: '10px' }}>
                       <span>Model: {systemStatus.cpu.model.split('@')[0]}</span>
-                    </span>
+                      {hardwareDetail && <span>🔥 {hardwareDetail.cpuTemp.main}°C</span>}
+                    </div>
                   </div>
                 </div>
 
-                {/* Card RAM */}
                 <div className="card">
-                  <div className="card-header">
-                    <span className="card-title">{t('ram')}</span>
-                    <span className="card-icon">🧠</span>
-                  </div>
+                  <div className="card-header"><span className="card-title">{t('ram')}</span><span className="card-icon">🧠</span></div>
                   <div className="card-body">
                     <h2>{systemStatus.ram.usedGB} GB <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>/ {systemStatus.ram.totalGB} GB ({systemStatus.ram.percentage}%)</span></h2>
                     <div className="progress-bar-container">
-                      <div 
-                        className={`progress-bar ${systemStatus.ram.percentage > 85 ? 'yellow' : 'green'}`}
-                        style={{ width: `${systemStatus.ram.percentage}%` }}
-                      ></div>
+                      <div className={`progress-bar ${systemStatus.ram.percentage > 85 ? 'yellow' : 'green'}`} style={{ width: `${systemStatus.ram.percentage}%` }}></div>
                     </div>
                     <div className="card-detail" style={{ marginTop: '10px' }}>
                       <span>{t('free')}: {systemStatus.ram.freeGB} GB</span>
@@ -378,19 +534,12 @@ function App() {
                   </div>
                 </div>
 
-                {/* Card Disk */}
                 <div className="card">
-                  <div className="card-header">
-                    <span className="card-title">{t('disk')}</span>
-                    <span className="card-icon">💾</span>
-                  </div>
+                  <div className="card-header"><span className="card-title">{t('disk')}</span><span className="card-icon">💾</span></div>
                   <div className="card-body">
                     <h2>{systemStatus.disk.usedGB} GB <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>/ {systemStatus.disk.totalGB} GB ({systemStatus.disk.percentage}%)</span></h2>
                     <div className="progress-bar-container">
-                      <div 
-                        className={`progress-bar ${systemStatus.disk.percentage > 90 ? 'yellow' : 'blue'}`}
-                        style={{ width: `${systemStatus.disk.percentage}%` }}
-                      ></div>
+                      <div className={`progress-bar ${systemStatus.disk.percentage > 90 ? 'yellow' : 'blue'}`} style={{ width: `${systemStatus.disk.percentage}%` }}></div>
                     </div>
                     <div className="card-detail" style={{ marginTop: '10px' }}>
                       <span>{t('free')}: {systemStatus.disk.freeGB} GB</span>
@@ -399,26 +548,27 @@ function App() {
                 </div>
               </div>
             ) : (
-              <div className="scanning-hud">
-                <div className="spinner"></div>
-                <p>{t('loadingSystem')}</p>
-              </div>
+              <div className="scanning-hud"><div className="spinner"></div><p>{t('loadingSystem')}</p></div>
             )}
 
-            <div className="card" style={{ marginTop: '16px', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '20px' }}>
-              <span style={{ fontSize: '32px' }}>🧹</span>
-              <div>
-                <h3>{t('wantToClean')}</h3>
-                <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>{t('cleanDescription')}</p>
+            {/* Hardware HUD - Pin */}
+            {hardwareDetail && hardwareDetail.battery.hasBattery && (
+              <div className="card">
+                <div className="card-header"><span className="card-title">{t('battery')}</span><span className="card-icon">🔋</span></div>
+                <div className="card-body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                  <div>
+                    <h2>{hardwareDetail.battery.percent}% <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>{hardwareDetail.battery.isCharging ? 'Charging' : 'Battery'}</span></h2>
+                    <div className="progress-bar-container" style={{ marginTop: '8px' }}>
+                      <div className="progress-bar green" style={{ width: `${hardwareDetail.battery.percent}%` }}></div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '4px', justifyContent: 'center' }}>
+                    <div><strong>{t('health')}</strong> {hardwareDetail.battery.health}%</div>
+                    <div><strong>{t('cycleCount')}</strong> {hardwareDetail.battery.cycleCount}</div>
+                  </div>
+                </div>
               </div>
-              <button 
-                className="btn btn-primary" 
-                style={{ marginLeft: 'auto' }}
-                onClick={() => setActiveTab('clean')}
-              >
-                {t('goToClean')}
-              </button>
-            </div>
+            )}
           </>
         )}
 
@@ -432,81 +582,43 @@ function App() {
               </div>
             </div>
 
-            {/* Lựa chọn cấp độ dọn dẹp */}
             {scanStatus === 'idle' && (
               <div>
                 <h3>{t('chooseLevel')}</h3>
                 <div className="clean-level-grid">
-                  <div 
-                    className={`level-card safe ${cleanLevel === 'safe' ? 'active' : ''}`}
-                    onClick={() => setCleanLevel('safe')}
-                  >
-                    <div className="level-header">
-                      <span className="level-title">{t('safeLevel')}</span>
-                      <span className="level-badge safe">Safe</span>
-                    </div>
+                  <div className={`level-card safe ${cleanLevel === 'safe' ? 'active' : ''}`} onClick={() => setCleanLevel('safe')}>
+                    <div className="level-header"><span className="level-title">{t('safeLevel')}</span><span className="level-badge safe">Safe</span></div>
                     <p className="level-desc">{t('safeDesc')}</p>
                   </div>
-
-                  <div 
-                    className={`level-card advanced ${cleanLevel === 'advanced' ? 'active' : ''}`}
-                    onClick={() => setCleanLevel('advanced')}
-                  >
-                    <div className="level-header">
-                      <span className="level-title">{t('advancedLevel')}</span>
-                      <span className="level-badge advanced">Advanced</span>
-                    </div>
+                  <div className={`level-card advanced ${cleanLevel === 'advanced' ? 'active' : ''}`} onClick={() => setCleanLevel('advanced')}>
+                    <div className="level-header"><span className="level-title">{t('advancedLevel')}</span><span className="level-badge advanced">Advanced</span></div>
                     <p className="level-desc">{t('advancedDesc')}</p>
                   </div>
-
-                  <div 
-                    className={`level-card deep ${cleanLevel === 'deep' ? 'active' : ''}`}
-                    onClick={() => setCleanLevel('deep')}
-                  >
-                    <div className="level-header">
-                      <span className="level-title">{t('deepLevel')}</span>
-                      <span className="level-badge deep">Deep</span>
-                    </div>
+                  <div className={`level-card deep ${cleanLevel === 'deep' ? 'active' : ''}`} onClick={() => setCleanLevel('deep')}>
+                    <div className="level-header"><span className="level-title">{t('deepLevel')}</span><span className="level-badge deep">Deep</span></div>
                     <p className="level-desc">{t('deepDesc')}</p>
                   </div>
                 </div>
-
-                <div className="actions-section">
-                  <button className="btn btn-primary" onClick={handleScan}>
-                    {t('startScan')}
-                  </button>
-                </div>
+                <div className="actions-section"><button className="btn btn-primary" onClick={handleScan}>{t('startScan')}</button></div>
               </div>
             )}
 
-            {/* Trạng thái đang quét */}
             {scanStatus === 'scanning' && (
-              <div className="scanning-hud">
-                <div className="spinner"></div>
-                <p style={{ fontWeight: 500 }}>{t('scanning')}</p>
-              </div>
+              <div className="scanning-hud"><div className="spinner"></div><p>{t('scanning')}</p></div>
             )}
 
-            {/* Hiển thị kết quả quét */}
             {scanStatus === 'scanned' && (
               <div className="results-container">
                 <div className="results-header">
                   <div>
                     <h2 className="results-title">{t('freeableSpace')} <span style={{ color: 'var(--accent-green)' }}>{getTotalTrashSize()}</span></h2>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '4px' }}>
-                      {t('currentLevel')} <span style={{ textTransform: 'capitalize', fontWeight: 'bold' }}>{cleanLevel}</span>
-                    </p>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '4px' }}>{t('currentLevel')} <strong>{cleanLevel}</strong></p>
                   </div>
                   <div style={{ display: 'flex', gap: '12px' }}>
-                    <button className="btn btn-secondary" onClick={() => setScanStatus('idle')}>
-                      {t('back')}
-                    </button>
-                    <button className="btn btn-primary" onClick={handleClean}>
-                      {t('cleanNow')}
-                    </button>
+                    <button className="btn btn-secondary" onClick={() => setScanStatus('idle')}>{t('back')}</button>
+                    <button className="btn btn-primary" onClick={handleClean}>{t('cleanNow')}</button>
                   </div>
                 </div>
-
                 <div className="results-list">
                   {getFilteredResults().map((cat, idx) => (
                     <div key={idx} style={{ marginBottom: '16px' }}>
@@ -515,14 +627,9 @@ function App() {
                         <span className={`level-badge ${cat.level}`} style={{ fontSize: '8px' }}>{cat.level}</span>
                       </h4>
                       {cat.items.map((item, itemIdx) => (
-                        <div key={itemIdx} className="result-item" style={{ marginBottom: '6px' }}>
+                        <div key={itemIdx} className="result-item">
                           <div className="item-left">
-                            <input 
-                              type="checkbox" 
-                              className="checkbox-custom"
-                              checked={!!selectedItems[item.title]}
-                              onChange={() => handleToggleItem(item.title)}
-                            />
+                            <input type="checkbox" className="checkbox-custom" checked={!!selectedItems[item.title]} onChange={() => handleToggleItem(item.title)} />
                             <span className="item-name">{item.title}</span>
                           </div>
                           <span className="item-size">{item.size}</span>
@@ -534,44 +641,293 @@ function App() {
               </div>
             )}
 
-            {/* Trạng thái đang dọn dẹp */}
             {scanStatus === 'cleaning' && (
-              <div className="scanning-hud">
-                <div className="spinner" style={{ borderTopColor: 'var(--accent-green)' }}></div>
-                <p style={{ fontWeight: 500 }}>{t('cleaning')}</p>
-              </div>
+              <div className="scanning-hud"><div className="spinner" style={{ borderTopColor: 'var(--accent-green)' }}></div><p>{t('cleaning')}</p></div>
             )}
 
-            {/* Kết quả sau khi dọn dẹp thành công */}
             {scanStatus === 'cleaned' && cleanSummary && (
               <div className="card" style={{ border: '1px solid var(--accent-green)', backgroundColor: 'rgba(52, 199, 89, 0.03)', textAlign: 'center', padding: '40px', gap: '20px' }}>
                 <span style={{ fontSize: '64px' }}>🎉</span>
                 <h2>{t('cleanSuccess')}</h2>
-                <p style={{ color: 'var(--text-secondary)', maxWidth: '500px', margin: '0 auto' }}>
-                  {t('cleanSuccessDesc')} {t('deletedCount', { count: cleanSummary.deletedPathsCount })}
-                </p>
-                {cleanSummary.failedPathsCount > 0 && (
-                  <p style={{ color: 'var(--accent-yellow)', fontSize: '13px' }}>
-                    {t('failedPaths', { count: cleanSummary.failedPathsCount })}
-                  </p>
-                )}
-                <div className="actions-section">
-                  <button className="btn btn-primary" onClick={() => setScanStatus('idle')}>
-                    {t('back')}
-                  </button>
-                </div>
+                <p style={{ color: 'var(--text-secondary)' }}>{t('cleanSuccessDesc')} {t('deletedCount', { count: cleanSummary.deletedPathsCount })}</p>
+                <button className="btn btn-primary" style={{ alignSelf: 'center' }} onClick={() => setScanStatus('idle')}>{t('back')}</button>
               </div>
             )}
           </>
         )}
 
-        {/* TAB 3: ABOUT */}
+        {/* TAB 3: UNINSTALLER */}
+        {activeTab === 'uninstaller' && (
+          <>
+            <div className="page-header">
+              <div>
+                <h1 className="page-title">{t('uninstallerTitle')}</h1>
+                <p className="page-subtitle">{t('uninstallerSubtitle')}</p>
+              </div>
+            </div>
+
+            {uninstallerStatus === 'idle' && (
+              <div className="card">
+                <input 
+                  type="text" 
+                  placeholder={t('searchApp')} 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    borderRadius: '10px',
+                    border: '1px solid var(--border-color)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                    color: '#fff',
+                    fontFamily: 'inherit',
+                    fontSize: '15px'
+                  }}
+                />
+                
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginTop: '16px', maxHeight: '420px', overflowY: 'auto' }}>
+                  {appsList.filter(app => app.name.toLowerCase().includes(searchQuery.toLowerCase())).map((app, idx) => (
+                    <div 
+                      key={idx} 
+                      onClick={() => handleScanAppLeftovers(app)}
+                      style={{
+                        padding: '16px',
+                        borderRadius: '12px',
+                        border: '1px solid var(--border-color)',
+                        backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)'}
+                    >
+                      <span style={{ fontSize: '24px' }}>💻</span>
+                      <div style={{ overflow: 'hidden' }}>
+                        <div style={{ fontWeight: 600, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{app.name}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{app.path}</div>
+                      </div>
+                    </div>
+                  ))}
+                  {appsList.length === 0 && <p>{t('noApps')}</p>}
+                </div>
+              </div>
+            )}
+
+            {uninstallerStatus === 'scanning' && (
+              <div className="scanning-hud">
+                <div className="spinner"></div>
+                <p>{t('scanLeftovers', { name: selectedApp?.name })}</p>
+              </div>
+            )}
+
+            {uninstallerStatus === 'scanned' && (
+              <div className="results-container">
+                <div className="results-header">
+                  <h2>{t('leftoversTitle', { name: selectedApp?.name })}</h2>
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <button className="btn btn-secondary" onClick={() => setUninstallerStatus('idle')}>{t('back')}</button>
+                    <button className="btn btn-danger" onClick={handleUninstallRun}>{t('uninstallBtn')}</button>
+                  </div>
+                </div>
+                <div className="results-list">
+                  {leftovers.map((item, idx) => (
+                    <div key={idx} className="result-item">
+                      <div className="item-left">
+                        <input 
+                          type="checkbox" 
+                          className="checkbox-custom"
+                          checked={!!selectedLeftovers[item.path]}
+                          onChange={() => setSelectedLeftovers(prev => ({ ...prev, [item.path]: !prev[item.path] }))}
+                        />
+                        <div>
+                          <div style={{ fontWeight: 500 }}>{item.path.replace(os.homedir(), '~')}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{item.type}</div>
+                        </div>
+                      </div>
+                      <span className="item-size" style={{ color: item.type.includes('Bundle') ? 'var(--accent-blue)' : 'inherit' }}>{item.size}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {uninstallerStatus === 'cleaning' && (
+              <div className="scanning-hud"><div className="spinner"></div><p>{t('uninstalling')}</p></div>
+            )}
+
+            {uninstallerStatus === 'cleaned' && uninstallSummary && (
+              <div className="card" style={{ border: '1px solid var(--accent-green)', backgroundColor: 'rgba(52, 199, 89, 0.03)', textAlign: 'center', padding: '40px', gap: '20px' }}>
+                <span style={{ fontSize: '64px' }}>🎉</span>
+                <h2>{t('uninstallSuccess')}</h2>
+                <p style={{ color: 'var(--text-secondary)' }}>{t('uninstallSuccessDesc', { count: uninstallSummary.deletedCount })}</p>
+                <button className="btn btn-primary" style={{ alignSelf: 'center' }} onClick={() => setUninstallerStatus('idle')}>{t('back')}</button>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* TAB 4: STARTUP */}
+        {activeTab === 'startup' && (
+          <>
+            <div className="page-header">
+              <div>
+                <h1 className="page-title">{t('startupTitle')}</h1>
+                <p className="page-subtitle">{t('startupSubtitle')}</p>
+              </div>
+            </div>
+
+            {startupLoading ? (
+              <div className="scanning-hud"><div className="spinner"></div><p>{t('loadingStartup')}</p></div>
+            ) : (
+              <div className="card" style={{ padding: '0px', overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+                      <th style={{ padding: '16px' }}>{t('startupName')}</th>
+                      <th style={{ padding: '16px', width: '150px' }}>{t('status')}</th>
+                      <th style={{ padding: '16px', width: '120px' }}>{t('action')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {startupItems.map((item, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                        <td style={{ padding: '16px' }}>
+                          <div style={{ fontWeight: 600 }}>{item.name}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>{item.path.replace(os.homedir(), '~')}</div>
+                        </td>
+                        <td style={{ padding: '16px' }}>
+                          <span 
+                            className={`level-badge ${item.enabled ? 'safe' : 'deep'}`}
+                            style={{ padding: '4px 10px', borderRadius: '12px', fontSize: '11px' }}
+                          >
+                            {item.enabled ? t('enabled') : t('disabled')}
+                          </span>
+                        </td>
+                        <td style={{ padding: '16px' }}>
+                          {/* Toggle Switch */}
+                          <label style={{ display: 'inline-block', width: '44px', height: '24px', position: 'relative', cursor: 'pointer' }}>
+                            <input 
+                              type="checkbox" 
+                              checked={item.enabled}
+                              onChange={() => handleToggleStartup(item)}
+                              style={{ opacity: 0, width: 0, height: 0 }}
+                            />
+                            <span style={{
+                              position: 'absolute',
+                              top: 0, left: 0, right: 0, bottom: 0,
+                              backgroundColor: item.enabled ? 'var(--accent-blue)' : 'rgba(255, 255, 255, 0.1)',
+                              borderRadius: '24px',
+                              transition: '0.3s'
+                            }}>
+                              <span style={{
+                                position: 'absolute',
+                                width: '18px', height: '18px',
+                                left: item.enabled ? '22px' : '3px',
+                                bottom: '3px',
+                                backgroundColor: '#fff',
+                                borderRadius: '50%',
+                                transition: '0.3s'
+                              }}></span>
+                            </span>
+                          </label>
+                        </td>
+                      </tr>
+                    ))}
+                    {startupItems.length === 0 && (
+                      <tr><td colSpan="3" style={{ padding: '24px', textAlign: 'center' }}>{t('noStartup')}</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* TAB 5: DISK MAP */}
+        {activeTab === 'diskMap' && (
+          <>
+            <div className="page-header">
+              <div>
+                <h1 className="page-title">{t('diskMapTitle')}</h1>
+                <p className="page-subtitle">{t('diskMapSubtitle')}</p>
+              </div>
+            </div>
+
+            {/* Breadcrumbs */}
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '16px' }}>
+              <button 
+                className="btn btn-secondary" 
+                onClick={handleGoUp}
+                disabled={diskMapPath === os.homedir() || diskMapPath === '/'}
+                style={{ padding: '6px 12px', fontSize: '13px' }}
+              >
+                ⬅️ {t('upFolder')}
+              </button>
+              <div style={{
+                flexGrow: 1,
+                padding: '8px 12px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color)',
+                backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                fontSize: '13px',
+                fontFamily: 'monospace',
+                overflowX: 'auto',
+                whiteSpace: 'nowrap'
+              }}>
+                {t('currentPath')} {diskMapPath.replace(os.homedir(), '~')}
+              </div>
+            </div>
+
+            {diskMapLoading ? (
+              <div className="scanning-hud"><div className="spinner"></div><p>{t('scanningDisk')}</p></div>
+            ) : (
+              <div className="results-container" style={{ padding: '0px', overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+                      <th style={{ padding: '16px' }}>{t('itemName')}</th>
+                      <th style={{ padding: '16px', width: '150px' }}>{t('size')}</th>
+                      <th style={{ padding: '16px', width: '120px' }}>{t('action')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {diskMapData && diskMapData.items.map((item, idx) => (
+                      <tr 
+                        key={idx} 
+                        style={{ borderBottom: '1px solid var(--border-color)', cursor: item.isDirectory ? 'pointer' : 'default' }}
+                        onClick={() => item.isDirectory && fetchDiskMap(item.path)}
+                      >
+                        <td style={{ padding: '16px' }}>
+                          <span style={{ marginRight: '8px' }}>{item.isDirectory ? '📁' : '📄'}</span>
+                          <span style={{ fontWeight: 500, color: item.isDirectory ? 'var(--accent-blue)' : 'inherit' }}>{item.name}</span>
+                        </td>
+                        <td style={{ padding: '16px', fontWeight: 600 }}>{item.sizeStr}</td>
+                        <td style={{ padding: '16px' }} onClick={(e) => e.stopPropagation()}>
+                          <button 
+                            className="btn btn-danger" 
+                            onClick={() => handleDeleteLargeFile(item.path, item.name)}
+                            style={{ padding: '6px 12px', fontSize: '12px', borderRadius: '6px' }}
+                          >
+                            {t('delete')}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* TAB 6: ABOUT */}
         {activeTab === 'about' && (
           <div className="card" style={{ gap: '20px' }}>
             <h1 style={{ fontSize: '28px' }}>{t('aboutTitle')}</h1>
-            <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-              {t('aboutDesc')}
-            </p>
+            <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6' }}>{t('aboutDesc')}</p>
             <hr style={{ borderColor: 'var(--border-color)' }} />
             <div>
               <h3>{t('features')}</h3>

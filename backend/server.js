@@ -4,6 +4,7 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const si = require('systeminformation');
 
 const app = express();
 const PORT = 4000;
@@ -107,7 +108,6 @@ function parseCleanDryRun(output) {
 
     // Phát hiện item chi tiết (ví dụ: → User app cache · 42 items, 431.9MB dry)
     if ((trimmed.startsWith('→ ') || trimmed.startsWith('• ') || trimmed.startsWith('✓ ')) && currentCategory) {
-      // Bỏ các dòng check "Nothing to clean" hay "already empty"
       if (trimmed.includes('Nothing to clean') || trimmed.includes('already empty')) {
         continue;
       }
@@ -118,7 +118,6 @@ function parseCleanDryRun(output) {
         const title = content.substring(0, dotIndex).trim();
         const detailsPart = content.substring(dotIndex + 1).trim();
         
-        // Lấy kích thước (ví dụ: 431.9MB dry)
         const sizeMatch = detailsPart.match(/([0-9.]+\s*(?:KB|MB|GB|B))(?:\s*dry)?/i);
         const size = sizeMatch ? sizeMatch[1] : '0B';
 
@@ -134,28 +133,25 @@ function parseCleanDryRun(output) {
   return categories;
 }
 
-// Phân loại các category theo mức độ an toàn
 function getCategoryLevel(categoryName) {
   const name = categoryName.toLowerCase();
   if (name.includes('essential') || name.includes('app cache') || name.includes('browser') || name.includes('cloud')) {
-    return 'safe'; // Cấp độ 1
+    return 'safe'; 
   }
   if (name.includes('developer') || name.includes('leftover') || name.includes('application support')) {
-    return 'advanced'; // Cấp độ 2
+    return 'advanced'; 
   }
   if (name.includes('virtualization') || name.includes('backup') || name.includes('large file')) {
-    return 'deep'; // Cấp độ 3
+    return 'deep'; 
   }
   return 'safe';
 }
 
-// 2. API: Quét hệ thống (Dry-run)
+// 2. API: Quét dọn dẹp hệ thống (Dry-run)
 app.get('/api/scan', (req, res) => {
   const moleCliPath = path.join(os.homedir(), '.local/bin/mo');
   
   exec(`"${moleCliPath}" clean --dry-run`, (err, stdout, stderr) => {
-    // mo clean --dry-run trả về 0 nếu thành công. 
-    // Chúng ta parse stdout bất kể có lỗi hay không nếu có dữ liệu.
     const output = stdout || stderr;
     if (!output) {
       return res.status(500).json({ error: 'Failed to run scan script' });
@@ -164,7 +160,6 @@ app.get('/api/scan', (req, res) => {
     try {
       const parsedResults = parseCleanDryRun(output);
       
-      // Đọc file danh sách chi tiết các file rác mà Mole xuất ra
       const listFile = path.join(os.homedir(), '.config/mole/clean-list.txt');
       let detailedPaths = [];
       if (fs.existsSync(listFile)) {
@@ -178,7 +173,6 @@ app.get('/api/scan', (req, res) => {
         }).filter(line => line.length > 0);
       }
 
-      // Lưu lại kết quả quét để phục vụ cho lệnh xóa sau này
       lastScanResults = {
         categories: parsedResults,
         detailedPaths
@@ -193,7 +187,7 @@ app.get('/api/scan', (req, res) => {
 
 // 3. API: Thực hiện dọn dẹp theo các mục được chọn
 app.post('/api/clean', (req, res) => {
-  const { selectedItems } = req.body; // Mảng các tiêu đề của item được chọn (ví dụ: ["User app cache", "Chrome cache"])
+  const { selectedItems } = req.body;
   
   if (!selectedItems || !Array.isArray(selectedItems) || selectedItems.length === 0) {
     return res.status(400).json({ error: 'No items selected for cleaning' });
@@ -205,29 +199,23 @@ app.post('/api/clean', (req, res) => {
 
   const pathsToDelete = [];
 
-  // Duyệt qua danh sách file chi tiết từ file clean-list.txt để lọc ra các đường dẫn thuộc các item được chọn
   lastScanResults.detailedPaths.forEach(filePath => {
-    // Giải quyết dấu ngã (~) thành thư mục nhà
     let resolvedPath = filePath;
     if (filePath.startsWith('~/')) {
       resolvedPath = path.join(os.homedir(), filePath.substring(2));
     }
 
-    // Bảo mật: kiểm tra xem đường dẫn có nằm trong whitelist bảo vệ không
     if (isPathWhitelisted(resolvedPath)) {
       console.log(`Bảo mật: Whitelisted path skipped from deletion: ${resolvedPath}`);
       return;
     }
 
-    // Phân loại: Kiểm tra xem tệp tin này thuộc category/item nào được chọn
-    // Ví dụ: file trong ~/Library/Caches/Google/Chrome thuộc "Chrome cache"
     const lowerPath = resolvedPath.toLowerCase();
     
     let matched = false;
     for (const itemTitle of selectedItems) {
       const lowerTitle = itemTitle.toLowerCase();
       
-      // Logic mapping đơn giản từ tiêu đề sang đường dẫn
       if (lowerTitle === 'user app cache' && lowerPath.includes('/library/caches') && !lowerPath.includes('/google/chrome') && !lowerPath.includes('/microsoft')) {
         matched = true;
       } else if (lowerTitle === 'chrome cache' && lowerPath.includes('/library/caches/google/chrome')) {
@@ -245,7 +233,6 @@ app.post('/api/clean', (req, res) => {
       } else if (lowerTitle === 'rust cargo cache' && lowerPath.includes('/.cargo/registry')) {
         matched = true;
       } else if (lowerPath.includes(lowerTitle.replace(/\s+/g, ''))) {
-        // Fallback: so khớp chuỗi tiêu đề không khoảng trắng vào đường dẫn
         matched = true;
       }
     }
@@ -259,7 +246,6 @@ app.post('/api/clean', (req, res) => {
     return res.json({ success: true, message: 'No matching paths found to delete' });
   }
 
-  // Thực hiện xóa an toàn
   let successCount = 0;
   let failCount = 0;
   const errors = [];
@@ -269,10 +255,8 @@ app.post('/api/clean', (req, res) => {
       if (fs.existsSync(targetPath)) {
         const stats = fs.statSync(targetPath);
         if (stats.isDirectory()) {
-          // Xóa đệ quy thư mục
           fs.rmSync(targetPath, { recursive: true, force: true });
         } else {
-          // Xóa file đơn lẻ
           fs.unlinkSync(targetPath);
         }
         successCount++;
@@ -287,14 +271,319 @@ app.post('/api/clean', (req, res) => {
     success: true,
     deletedPathsCount: successCount,
     failedPathsCount: failCount,
-    errors: errors.slice(0, 10) // Chỉ trả về tối đa 10 lỗi để tránh payload quá lớn
+    errors: errors.slice(0, 10)
   });
 });
 
-// Phục vụ các file tĩnh của React frontend (sau khi build)
+// --- CÁC TÍNH NĂNG MỚI NÂNG CẤP ---
+
+// 4. API: Lấy thông số phần cứng chi tiết (Pin & Nhiệt độ CPU)
+app.get('/api/system-detail', async (req, res) => {
+  try {
+    const battery = await si.battery();
+    const temp = await si.cpuTemperature();
+    
+    res.json({
+      battery: {
+        hasBattery: battery.hasBattery,
+        cycleCount: battery.cycleCount || 0,
+        isCharging: battery.isCharging,
+        percent: battery.percent,
+        health: battery.maxCapacity && battery.designCapacity 
+                ? Math.round((battery.maxCapacity / battery.designCapacity) * 100)
+                : 100
+      },
+      cpuTemp: {
+        main: temp.main ? Math.round(temp.main) : 0,
+        cores: temp.cores || []
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to read system detail' });
+  }
+});
+
+// 5. API: Lấy danh sách các ứng dụng đã cài đặt
+app.get('/api/apps/list', (req, res) => {
+  const appsDirs = ['/Applications', path.join(os.homedir(), 'Applications')];
+  let apps = [];
+  
+  appsDirs.forEach(dir => {
+    if (fs.existsSync(dir)) {
+      try {
+        const files = fs.readdirSync(dir);
+        files.forEach(file => {
+          if (file.endsWith('.app')) {
+            const appPath = path.join(dir, file);
+            const name = file.replace('.app', '');
+            apps.push({ name, path: appPath });
+          }
+        });
+      } catch (e) {
+        console.error(`Error reading ${dir}: ${e.message}`);
+      }
+    }
+  });
+  
+  res.json(apps.sort((a, b) => a.name.localeCompare(b.name)));
+});
+
+// 6. API: Quét tìm file leftovers của ứng dụng chỉ định
+app.post('/api/apps/uninstall-scan', (req, res) => {
+  const { appName, appPath } = req.body;
+  if (!appName || !appPath) {
+    return res.status(400).json({ error: 'Missing appName or appPath' });
+  }
+
+  const searchPaths = [
+    path.join(os.homedir(), 'Library/Application Support'),
+    path.join(os.homedir(), 'Library/Caches'),
+    path.join(os.homedir(), 'Library/Preferences'),
+    path.join(os.homedir(), 'Library/Logs'),
+    '/Library/Application Support',
+    '/Library/Caches',
+    '/Library/Logs'
+  ];
+
+  const leftovers = [];
+  
+  // File chạy chính .app luôn nằm trong danh sách xóa
+  leftovers.push({ path: appPath, type: 'Application Bundle', size: 'Directory' });
+
+  searchPaths.forEach(parentDir => {
+    if (fs.existsSync(parentDir)) {
+      try {
+        const files = fs.readdirSync(parentDir);
+        files.forEach(file => {
+          const lowerFile = file.toLowerCase();
+          const lowerAppName = appName.toLowerCase();
+          
+          if (lowerFile.includes(lowerAppName) || (lowerAppName.length > 4 && lowerFile.includes(lowerAppName.substring(0, 4)))) {
+            const fullPath = path.join(parentDir, file);
+            let size = 'Directory';
+            try {
+              const stats = fs.statSync(fullPath);
+              if (!stats.isDirectory()) {
+                size = stats.size > 1024 * 1024 
+                  ? `${(stats.size / (1024 * 1024)).toFixed(1)} MB` 
+                  : `${(stats.size / 1024).toFixed(1)} KB`;
+              }
+            } catch (err) {}
+            
+            leftovers.push({
+              path: fullPath,
+              type: 'Leftover Asset',
+              size
+            });
+          }
+        });
+      } catch (e) {}
+    }
+  });
+
+  res.json(leftovers);
+});
+
+// 7. API: Thực thi xóa ứng dụng và leftovers
+app.post('/api/apps/uninstall-run', (req, res) => {
+  const { paths } = req.body;
+  if (!paths || !Array.isArray(paths)) {
+    return res.status(400).json({ error: 'Invalid paths' });
+  }
+
+  let successCount = 0;
+  let failCount = 0;
+  const errors = [];
+
+  paths.forEach(targetPath => {
+    if (isPathWhitelisted(targetPath)) {
+      console.log(`Bảo mật: Whitelisted path skipped from uninstallation: ${targetPath}`);
+      return;
+    }
+
+    try {
+      if (fs.existsSync(targetPath)) {
+        const stats = fs.statSync(targetPath);
+        if (stats.isDirectory()) {
+          fs.rmSync(targetPath, { recursive: true, force: true });
+        } else {
+          fs.unlinkSync(targetPath);
+        }
+        successCount++;
+      }
+    } catch (e) {
+      failCount++;
+      errors.push({ path: targetPath, error: e.message });
+    }
+  });
+
+  res.json({ success: true, deletedCount: successCount, failedCount: failCount, errors });
+});
+
+// 8. API: Lấy danh sách ứng dụng khởi động cùng macOS (Launch Agents)
+app.get('/api/startup/list', (req, res) => {
+  const paths = [
+    path.join(os.homedir(), 'Library/LaunchAgents'),
+    '/Library/LaunchAgents',
+    '/Library/LaunchDaemons'
+  ];
+
+  const items = [];
+  const disabledDir = path.join(os.homedir(), 'disabled_launch_agents');
+  if (!fs.existsSync(disabledDir)) {
+    fs.mkdirSync(disabledDir, { recursive: true });
+  }
+
+  paths.forEach(dir => {
+    if (fs.existsSync(dir)) {
+      try {
+        const files = fs.readdirSync(dir);
+        files.forEach(file => {
+          if (file.endsWith('.plist')) {
+            const fullPath = path.join(dir, file);
+            items.push({
+              name: file.replace('.plist', ''),
+              path: fullPath,
+              enabled: true,
+              originDir: dir
+            });
+          }
+        });
+      } catch (e) {}
+    }
+  });
+
+  // Đọc danh sách các file đang bị vô hiệu hóa
+  if (fs.existsSync(disabledDir)) {
+    try {
+      const files = fs.readdirSync(disabledDir);
+      files.forEach(file => {
+        if (file.endsWith('.plist')) {
+          const fullPath = path.join(disabledDir, file);
+          items.push({
+            name: file.replace('.plist', ''),
+            path: fullPath,
+            enabled: false,
+            originDir: path.join(os.homedir(), 'Library/LaunchAgents') // Fallback origin
+          });
+        }
+      });
+    } catch (e) {}
+  }
+
+  res.json(items);
+});
+
+// 9. API: Bật/tắt trạng thái ứng dụng khởi động
+app.post('/api/startup/toggle', (req, res) => {
+  const { name, currentPath, enabled } = req.body;
+  if (!name || !currentPath) {
+    return res.status(400).json({ error: 'Missing name or currentPath' });
+  }
+
+  const disabledDir = path.join(os.homedir(), 'disabled_launch_agents');
+  if (!fs.existsSync(disabledDir)) {
+    fs.mkdirSync(disabledDir, { recursive: true });
+  }
+
+  const fileName = `${name}.plist`;
+  
+  try {
+    if (enabled) {
+      // Đang bật -> Tắt (Di chuyển vào thư mục disabled_launch_agents)
+      const targetPath = path.join(disabledDir, fileName);
+      if (fs.existsSync(currentPath)) {
+        fs.renameSync(currentPath, targetPath);
+        return res.json({ success: true, enabled: false, newPath: targetPath });
+      }
+    } else {
+      // Đang tắt -> Bật (Di chuyển về lại LaunchAgents)
+      const targetPath = path.join(os.homedir(), 'Library/LaunchAgents', fileName);
+      if (fs.existsSync(currentPath)) {
+        fs.renameSync(currentPath, targetPath);
+        return res.json({ success: true, enabled: true, newPath: targetPath });
+      }
+    }
+    res.status(400).json({ error: 'Source file does not exist' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 10. API: Bản đồ phân tích dung lượng đĩa
+app.get('/api/disk-map', (req, res) => {
+  let targetPath = req.query.path || os.homedir();
+  if (targetPath.startsWith('~/')) {
+    targetPath = path.join(os.homedir(), targetPath.substring(2));
+  }
+
+  if (!fs.existsSync(targetPath)) {
+    return res.status(400).json({ error: 'Path does not exist' });
+  }
+
+  // Bảo mật ranh giới
+  if (!targetPath.startsWith(os.homedir()) && !targetPath.startsWith('/Applications')) {
+    return res.status(403).json({ error: 'Access denied outside user directory' });
+  }
+
+  let cmd = `du -k -d 1 "${targetPath}"`;
+  if (targetPath === os.homedir()) {
+    cmd = `find "${targetPath}" -mindepth 1 -maxdepth 1 -not -name "Library" -not -name ".*" -exec du -sk {} +`;
+  }
+
+  exec(cmd, { timeout: 15000 }, (err, stdout, stderr) => {
+    if (err && !stdout) {
+      return res.status(500).json({ error: 'Failed to scan disk space' });
+    }
+
+    const items = [];
+    const lines = (stdout || '').trim().split('\n');
+    
+    lines.forEach(line => {
+      const parts = line.split(/\s+/);
+      if (parts.length >= 2) {
+        const sizeKB = parseInt(parts[0], 10);
+        const fullPath = parts.slice(1).join(' ');
+        
+        if (fullPath === targetPath || path.resolve(fullPath) === path.resolve(targetPath)) {
+          return;
+        }
+
+        const name = path.basename(fullPath);
+        if (name.startsWith('.')) return; 
+
+        let isDir = false;
+        try {
+          isDir = fs.statSync(fullPath).isDirectory();
+        } catch (e) {}
+
+        let sizeStr = '0 B';
+        if (sizeKB > 1024 * 1024) sizeStr = `${(sizeKB / (1024 * 1024)).toFixed(1)} GB`;
+        else if (sizeKB > 1024) sizeStr = `${(sizeKB / 1024).toFixed(1)} MB`;
+        else sizeStr = `${sizeKB} KB`;
+
+        items.push({
+          name,
+          path: fullPath,
+          sizeKB,
+          sizeStr,
+          isDirectory: isDir
+        });
+      }
+    });
+
+    items.sort((a, b) => b.sizeKB - a.sizeKB);
+
+    res.json({
+      currentPath: targetPath,
+      items: items.slice(0, 45) // Lấy top 45 file lớn nhất
+    });
+  });
+});
+
+// Phục vụ frontend tĩnh
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
 app.get('*', (req, res, next) => {
-  // Chỉ phục vụ frontend cho các route không phải API
   if (req.path.startsWith('/api')) {
     return next();
   }
