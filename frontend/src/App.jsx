@@ -183,6 +183,16 @@ const TRANSLATIONS = {
   }
 };
 
+const formatPath = (p) => {
+  if (!p) return '';
+  return p.replace(/^\/Users\/[^\/]+/, '~');
+};
+
+const isHomeDirectory = (p) => {
+  if (!p) return true;
+  return /^\/Users\/[^\/]+\/?$/.test(p) || p === '/';
+};
+
 function App() {
   const [lang, setLang] = useState(() => localStorage.getItem('sachmac_lang') || 'vi');
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -743,7 +753,7 @@ function App() {
                           onChange={() => setSelectedLeftovers(prev => ({ ...prev, [item.path]: !prev[item.path] }))}
                         />
                         <div>
-                          <div style={{ fontWeight: 500 }}>{item.path.replace(os.homedir(), '~')}</div>
+                          <div style={{ fontWeight: 500 }}>{formatPath(item.path)}</div>
                           <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{item.type}</div>
                         </div>
                       </div>
@@ -803,7 +813,7 @@ function App() {
                               </span>
                             )}
                           </div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>{item.path.replace(os.homedir(), '~')}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>{formatPath(item.path)}</div>
                         </td>
                         <td style={{ padding: '16px' }}>
                           <span 
@@ -876,7 +886,7 @@ function App() {
               <button 
                 className="btn btn-secondary" 
                 onClick={handleGoUp}
-                disabled={diskMapPath === os.homedir() || diskMapPath === '/'}
+                disabled={isHomeDirectory(diskMapPath)}
                 style={{ padding: '6px 12px', fontSize: '13px' }}
               >
                 ⬅️ {t('upFolder')}
@@ -892,7 +902,7 @@ function App() {
                 overflowX: 'auto',
                 whiteSpace: 'nowrap'
               }}>
-                {t('currentPath')} {diskMapPath.replace(os.homedir(), '~')}
+                {t('currentPath')} {formatPath(diskMapPath)}
               </div>
             </div>
 
