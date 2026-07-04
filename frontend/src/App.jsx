@@ -78,6 +78,7 @@ const TRANSLATIONS = {
     diskMapSubtitle: "Quét dung lượng các thư mục con và tìm các file cực lớn",
     currentPath: "Thư mục hiện tại:",
     upFolder: "Thư mục cha",
+    selectFolder: "Chọn thư mục",
     scanningDisk: "Đang quét phân tích dung lượng ổ đĩa. Vui lòng đợi...",
     itemName: "Tên tệp/thư mục",
     size: "Dung lượng",
@@ -168,6 +169,7 @@ const TRANSLATIONS = {
     diskMapSubtitle: "Scan subdirectory sizes and identify large files",
     currentPath: "Current Directory:",
     upFolder: "Up Folder",
+    selectFolder: "Select Folder",
     scanningDisk: "Scanning disk directories. Please wait...",
     itemName: "File/Folder Name",
     size: "Size",
@@ -449,6 +451,23 @@ function App() {
       parts.pop();
       const parent = parts.join('/');
       fetchDiskMap(parent);
+    }
+  };
+
+  // Chọn thư mục để phân tích
+  const handleSelectFolder = async () => {
+    try {
+      const res = await fetch('http://127.0.0.1:4000/api/select-folder', {
+        method: 'POST'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.path) {
+          fetchDiskMap(data.path);
+        }
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -883,6 +902,13 @@ function App() {
 
             {/* Breadcrumbs */}
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '16px' }}>
+              <button 
+                className="btn btn-primary" 
+                onClick={handleSelectFolder}
+                style={{ padding: '6px 12px', fontSize: '13px' }}
+              >
+                📁 {t('selectFolder')}
+              </button>
               <button 
                 className="btn btn-secondary" 
                 onClick={handleGoUp}

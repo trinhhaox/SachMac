@@ -525,6 +525,19 @@ app.post('/api/startup/toggle', (req, res) => {
   }
 });
 
+// 9.5 API: Mở hộp thoại chọn thư mục native của macOS bằng AppleScript
+app.post('/api/select-folder', (req, res) => {
+  const appleScript = `osascript -e 'POSIX path of (choose folder with prompt "Chọn thư mục cần phân tích:")'`;
+  exec(appleScript, (err, stdout, stderr) => {
+    if (err) {
+      // Người dùng bấm Cancel hoặc đóng hộp thoại
+      return res.status(400).json({ error: 'User cancelled folder selection' });
+    }
+    const selectedPath = stdout.trim();
+    res.json({ path: selectedPath });
+  });
+});
+
 // 10. API: Bản đồ phân tích dung lượng đĩa
 app.get('/api/disk-map', (req, res) => {
   let targetPath = req.query.path || os.homedir();
