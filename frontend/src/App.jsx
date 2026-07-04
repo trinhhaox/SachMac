@@ -241,6 +241,18 @@ function App() {
     localStorage.setItem('sachmac_lang', newLang);
   };
 
+  // Lắng nghe callback chọn thư mục từ native Swift wrapper
+  useEffect(() => {
+    window.onFolderSelected = (selectedPath) => {
+      if (selectedPath) {
+        fetchDiskMap(selectedPath);
+      }
+    };
+    return () => {
+      delete window.onFolderSelected;
+    };
+  }, []);
+
   // Fetch trạng thái hệ thống và phần cứng định kỳ
   useEffect(() => {
     const fetchStatus = async () => {
@@ -455,19 +467,15 @@ function App() {
   };
 
   // Chọn thư mục để phân tích
-  const handleSelectFolder = async () => {
-    try {
-      const res = await fetch('http://127.0.0.1:4000/api/select-folder', {
-        method: 'POST'
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.path) {
-          fetchDiskMap(data.path);
-        }
+  const handleSelectFolder = () => {
+    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.selectFolder) {
+      window.webkit.messageHandlers.selectFolder.postMessage(null);
+    } else {
+      // Fallback khi chạy test bằng trình duyệt web thông thường ngoài wrapper
+      const pathInput = prompt("Nhập đường dẫn thư mục cần phân tích:");
+      if (pathInput) {
+        fetchDiskMap(pathInput);
       }
-    } catch (err) {
-      console.error(err);
     }
   };
 

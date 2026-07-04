@@ -1,7 +1,7 @@
 import Cocoa
 import WebKit
 
-class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMessageHandler {
     var window: NSWindow!
     var webView: WKWebView!
     var nodeProcess: Process?
@@ -27,6 +27,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         // 3. Khởi tạo WKWebView
         let config = WKWebViewConfiguration()
+        let contentController = WKUserContentController()
+        contentController.add(self, name: "selectFolder")
+        config.userContentController = contentController
+        
         webView = WKWebView(frame: window.contentView!.bounds, configuration: config)
         webView.autoresizingMask = [.width, .height]
         
@@ -87,6 +91,29 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         NSApplication.shared.terminate(nil)
+    }
+
+    // Xử lý sự kiện mở Folder Picker native từ Webview
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        if message.name == "selectFolder" {
+            DispatchQueue.main.async {
+                let openPanel = NSOpenPanel()
+                openPanel.canChooseDirectories = true
+                openPanel.canChooseFiles = false
+                openPanel.allowsMultipleSelection = false
+                openPanel.prompt = "Chọn thư mục"
+                
+                openPanel.beginSheetModal(for: self.window) { (result) in
+                    if result == .OK {
+                        if let url = openPanel.url {
+                            let path = url.path
+                            let js = "if (window.onFolderSelected) { window.onFolderSelected('\(path)'); }"
+                            self.webView.evaluateJavaScript(js, completionHandler: nil)
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
