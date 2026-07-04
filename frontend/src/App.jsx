@@ -315,10 +315,16 @@ function App() {
     try {
       const res = await fetch(`http://127.0.0.1:4000/api/disk-map?path=${encodeURIComponent(dirPath)}`);
       const data = await res.json();
-      setDiskMapData(data);
-      setDiskMapPath(data.currentPath);
+      if (!res.ok || data.error) {
+        alert("Lỗi truy cập thư mục: " + (data.error || "Operation not permitted"));
+        setDiskMapData({ currentPath: dirPath, items: [] });
+      } else {
+        setDiskMapData(data);
+        setDiskMapPath(data.currentPath);
+      }
     } catch (err) {
       console.error(err);
+      setDiskMapData({ currentPath: dirPath, items: [] });
     } finally {
       setDiskMapLoading(false);
     }
@@ -819,7 +825,7 @@ function App() {
             {startupLoading ? (
               <div className="scanning-hud"><div className="spinner"></div><p>{t('loadingStartup')}</p></div>
             ) : (
-              <div className="card" style={{ padding: '0px', overflow: 'hidden' }}>
+              <div className="card" style={{ padding: '0px', overflowY: 'auto', maxHeight: 'calc(100vh - 260px)' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
@@ -943,7 +949,7 @@ function App() {
             {diskMapLoading ? (
               <div className="scanning-hud"><div className="spinner"></div><p>{t('scanningDisk')}</p></div>
             ) : (
-              <div className="results-container" style={{ padding: '0px', overflow: 'hidden' }}>
+              <div className="results-container" style={{ padding: '0px', overflowY: 'auto', maxHeight: 'calc(100vh - 300px)' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
@@ -953,7 +959,7 @@ function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {diskMapData && diskMapData.items.map((item, idx) => (
+                    {diskMapData && Array.isArray(diskMapData.items) && diskMapData.items.map((item, idx) => (
                       <tr 
                         key={idx} 
                         style={{ borderBottom: '1px solid var(--border-color)', cursor: item.isDirectory ? 'pointer' : 'default' }}
