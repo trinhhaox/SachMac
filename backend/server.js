@@ -422,56 +422,71 @@ app.post('/api/apps/uninstall-run', (req, res) => {
 
 // 8. API: Lấy danh sách ứng dụng khởi động cùng macOS (Launch Agents)
 app.get('/api/startup/list', (req, res) => {
-  const paths = [
-    path.join(os.homedir(), 'Library/LaunchAgents'),
-    '/Library/LaunchAgents',
-    '/Library/LaunchDaemons'
-  ];
+  try {
+    const paths = [
+      path.join(os.homedir(), 'Library/LaunchAgents'),
+      '/Library/LaunchAgents',
+      '/Library/LaunchDaemons'
+    ];
 
-  const items = [];
-  const disabledDir = path.join(os.homedir(), 'disabled_launch_agents');
-  if (!fs.existsSync(disabledDir)) {
-    fs.mkdirSync(disabledDir, { recursive: true });
-  }
-
-  paths.forEach(dir => {
-    if (fs.existsSync(dir)) {
+    const items = [];
+    const disabledDir = path.join(os.homedir(), 'disabled_launch_agents');
+    if (!fs.existsSync(disabledDir)) {
       try {
-        const files = fs.readdirSync(dir);
+        fs.mkdirSync(disabledDir, { recursive: true });
+      } catch (err) {
+        console.error('Cannot create disabled launch agents folder:', err.message);
+      }
+    }
+
+    paths.forEach(dir => {
+      if (fs.existsSync(dir)) {
+        try {
+          const files = fs.readdirSync(dir);
+          files.forEach(file => {
+            if (file.endsWith('.plist')) {
+              const fullPath = path.join(dir, file);
+              const isSystem = dir.startsWith('/Library');
+              items.push({
+                name: file.replace('.plist', ''),
+                path: fullPath,
+                enabled: true,
+                isSystem,
+                originDir: dir
+              });
+            }
+          });
+        } catch (e) {
+          console.error(`Error reading startup dir ${dir}:`, e.message);
+        }
+      }
+    });
+
+    // Đọc danh sách các file đang bị vô hiệu hóa
+    if (fs.existsSync(disabledDir)) {
+      try {
+        const files = fs.readdirSync(disabledDir);
         files.forEach(file => {
           if (file.endsWith('.plist')) {
-            const fullPath = path.join(dir, file);
+            const fullPath = path.join(disabledDir, file);
             items.push({
               name: file.replace('.plist', ''),
               path: fullPath,
-              enabled: true,
-              originDir: dir
+              enabled: false,
+              isSystem: false,
+              originDir: path.join(os.homedir(), 'Library/LaunchAgents')
             });
           }
         });
-      } catch (e) {}
+      } catch (e) {
+        console.error('Error reading disabled startup dir:', e.message);
+      }
     }
-  });
 
-  // Đọc danh sách các file đang bị vô hiệu hóa
-  if (fs.existsSync(disabledDir)) {
-    try {
-      const files = fs.readdirSync(disabledDir);
-      files.forEach(file => {
-        if (file.endsWith('.plist')) {
-          const fullPath = path.join(disabledDir, file);
-          items.push({
-            name: file.replace('.plist', ''),
-            path: fullPath,
-            enabled: false,
-            originDir: path.join(os.homedir(), 'Library/LaunchAgents') // Fallback origin
-          });
-        }
-      });
-    } catch (e) {}
+    res.json(items);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to retrieve startup items', details: err.message });
   }
-
-  res.json(items);
 });
 
 // 9. API: Bật/tắt trạng thái ứng dụng khởi động

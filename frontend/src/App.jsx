@@ -795,7 +795,14 @@ function App() {
                     {startupItems.map((item, idx) => (
                       <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
                         <td style={{ padding: '16px' }}>
-                          <div style={{ fontWeight: 600 }}>{item.name}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontWeight: 600 }}>{item.name}</span>
+                            {item.isSystem && (
+                              <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', backgroundColor: 'rgba(255, 255, 255, 0.08)', color: 'var(--text-secondary)' }}>
+                                System
+                              </span>
+                            )}
+                          </div>
                           <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>{item.path.replace(os.homedir(), '~')}</div>
                         </td>
                         <td style={{ padding: '16px' }}>
@@ -808,17 +815,25 @@ function App() {
                         </td>
                         <td style={{ padding: '16px' }}>
                           {/* Toggle Switch */}
-                          <label style={{ display: 'inline-block', width: '44px', height: '24px', position: 'relative', cursor: 'pointer' }}>
+                          <label style={{ 
+                            display: 'inline-block', 
+                            width: '44px', 
+                            height: '24px', 
+                            position: 'relative', 
+                            cursor: item.isSystem ? 'not-allowed' : 'pointer',
+                            opacity: item.isSystem ? 0.5 : 1
+                          }}>
                             <input 
                               type="checkbox" 
                               checked={item.enabled}
+                              disabled={item.isSystem}
                               onChange={() => handleToggleStartup(item)}
                               style={{ opacity: 0, width: 0, height: 0 }}
                             />
                             <span style={{
                               position: 'absolute',
                               top: 0, left: 0, right: 0, bottom: 0,
-                              backgroundColor: item.enabled ? 'var(--accent-blue)' : 'rgba(255, 255, 255, 0.1)',
+                              backgroundColor: item.isSystem ? 'rgba(255, 255, 255, 0.05)' : (item.enabled ? 'var(--accent-blue)' : 'rgba(255, 255, 255, 0.1)'),
                               borderRadius: '24px',
                               transition: '0.3s'
                             }}>
@@ -827,7 +842,7 @@ function App() {
                                 width: '18px', height: '18px',
                                 left: item.enabled ? '22px' : '3px',
                                 bottom: '3px',
-                                backgroundColor: '#fff',
+                                backgroundColor: item.isSystem ? '#555' : '#fff',
                                 borderRadius: '50%',
                                 transition: '0.3s'
                               }}></span>
